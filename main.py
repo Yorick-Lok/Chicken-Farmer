@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
-
+import math
 
 class ChickenFarm:
     """The class for the chicken farm."""
@@ -16,7 +16,7 @@ class ChickenFarm:
 
         # Week prompt
         self.instruction_label = tk.Label(
-            self.root, text="Enter the information of the week here."
+            self.root, text="Enter the information of the week here"
         )
         self.instruction_label.pack(pady=10)
 
@@ -30,10 +30,16 @@ class ChickenFarm:
         self.chickens_entry = tk.Entry(self.root, width=5)
         self.chickens_entry.pack()
 
-        # Eggs Entry
-        tk.Label(self.root, text="Chickens that laid eggs:").pack()
+        # Laid Eggs Entry
+        tk.Label(self.root, text="Chickens that laid eggs").pack()
         self.laid_eggs_entry = tk.Entry(self.root, width=5)
         self.laid_eggs_entry.pack()
+
+        # Hours Worked Entry
+        tk.Label(self.root, text="Hours worked (1-40)").pack()
+        self.hours_worked_entry = tk.Entry(self.root, width=5)
+        self.hours_worked_entry.pack()
+                 
 
         # Button to view week
         self.week_view_button = tk.Button(
@@ -86,32 +92,75 @@ class ChickenFarm:
             return
 
         try:
-            laid_eggs = int(self.laid_eggs_entry.get())
-            if laid_eggs < 0 or laid_eggs > chickens:
+            chickens_laid_eggs = int(self.laid_eggs_entry.get())
+            if chickens_laid_eggs < 0 or chickens_laid_eggs > chickens:
                 messagebox.showerror(
                     "Invalid Input",
-                    "Laid eggs must be between 0 and total chickens.",
+                    "Chickens that laid eggs must be between 0 and total chickens.",
                 )
                 return
         except ValueError:
             messagebox.showerror(
-                "Invalid Input", "Please enter a valid number for laid eggs."
+                "Invalid Input", "Please enter a valid number for the chickens that laid eggs."
             )
             return
-
+        
+        try:
+            hours_worked = int(self.hours_worked_entry.get())
+            if hours_worked < 1 or hours_worked > 40:
+                messagebox.showerror("Invalid Input",
+                                     "Please select an appropiate amount of hours.")
+                return
+        except ValueError:
+            messagebox.showerror("Invalid Input",
+                                 "Please enter a valid number.")
+            return
+        
+        
+        
+        
+        
         # Clear entries
         self.week_entry.delete(0, tk.END)
         self.chickens_entry.delete(0, tk.END)
         self.laid_eggs_entry.delete(0, tk.END)
         self.week_entry.focus_set()
+        self.hours_worked_entry.delete(0, tk.END)
 
-        # Display output
+        # Calculations
+        egg_count = chickens_laid_eggs * 5 # Every chicken lays an average amount of 5 eggs.
+        boxes_filled = math.floor(egg_count / 12) # There's 12 eggs in 1 box.
+        eggs_in_box = boxes_filled * 12 # The amount of eggs that are in boxes.
+        eggs_left = egg_count - eggs_in_box # Calculate how many eggs are left over.
+        payment_hour = 3.50
+        final_payment = payment_hour * hours_worked
+        # Costs
+        price_per_box = 6.00
+        deposit_per_box = 1.00
+        single_egg = 1.00
+
+        lines = "-" * 45 + "\n"
+        # Display Statistics output
         self.output_area.insert(tk.END, f"Week {num_week} Statistics:\n")
-        self.output_area.insert(tk.END, "-" * 45 + "\n")
+        self.output_area.insert(tk.END, lines)
+
+        self.output_area.insert(tk.END, "Chickens:\n\n")
         self.output_area.insert(tk.END, f"Total Chickens: {chickens}\n")
-        self.output_area.insert(tk.END, f"Chickens That Laid Eggs: {laid_eggs}\n")
-        self.output_area.insert(tk.END, "-" * 45 + "\n")
-        self.output_area.see(tk.END)
+        self.output_area.insert(tk.END, f"Chickens That Laid Eggs: {chickens_laid_eggs}\n\n")
+        self.output_area.insert(tk.END, lines)
+
+        self.output_area.insert(tk.END, "Eggs:\n\n")
+        self.output_area.insert(tk.END, f"Laid Eggs: {egg_count}\n")
+        self.output_area.insert(tk.END, f"Filled Boxes: {boxes_filled} ({eggs_in_box} eggs)\n")
+        self.output_area.insert(tk.END, f"Leftover Eggs: {eggs_left}\n")
+        self.output_area.insert(tk.END, lines)
+
+        self.output_area.insert(tk.END, "Payment:\n\n")
+        self.output_area.insert(tk.END, f"Hours worked: {hours_worked}\n")
+        self.output_area.insert(tk.END, f"Payment: €3,50/hour\n")
+        self.output_area.insert(tk.END, f"Final Payment: €{final_payment}\n")
+        self.output_area.insert(tk.END, lines)
+        
 
     def clear_output(self):
         """Clear the output area."""
