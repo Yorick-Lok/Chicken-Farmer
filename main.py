@@ -119,24 +119,65 @@ class ChickenFarm:
         deposit_per_box = 1.00
         single_egg = 1.00
         payment_hour = 3.50
-
-        # Calculations
-        egg_count = chickens_laid_eggs * 5
-        boxes_filled = math.floor(egg_count / 12)
-        eggs_in_box = boxes_filled * 12
-        eggs_left = egg_count - eggs_in_box
-
-        final_payment = payment_hour * hours_worked
-        maximum_income = (boxes_filled * (price_per_box + deposit_per_box)) + (eggs_left * single_egg)
-
-        # Apply 10 free eggs to worker (bonus worth €10)
         bonus_eggs = 10
-        bonus_value = bonus_eggs * single_egg
-        final_payment = max(0, final_payment - bonus_value)  # Deduct from worker payment only
+
+        # Total eggs laid
+        total_eggs = chickens_laid_eggs * 5
+
+        # Calculate initial boxes and leftover
+        initial_boxes = total_eggs // 12
+        initial_leftover = total_eggs % 12
+        boxes_filled = initial_boxes
+        
+
+        # Calculate eggs to give as bonus:
+
+        # Start with leftover eggs
+        bonus_from_leftover = min(initial_leftover, bonus_eggs)
+        eggs_needed = bonus_eggs - bonus_from_leftover
+
+        boxes_removed = 0
+
+        # If leftover not enough to make 10 bonus eggs
+        if eggs_needed > 0:
+            # Check if removing 1 box (12 eggs) can help reach bonus
+            if initial_boxes > 0:
+                # Remove 1 box
+                boxes_removed = 1
+                initial_boxes -= 1
+                initial_leftover += 12
+                # Recalculate bonus from leftover with added box eggs
+                bonus_from_leftover = min(initial_leftover, bonus_eggs)
+                eggs_needed = bonus_eggs - bonus_from_leftover
+            else:
+                # No boxes to remove, eggs_needed remains (worker bonus is just leftover eggs)
+                # eggs_needed won't matter since no boxes left
+                eggs_needed = 0  # worker only gets what's there (less than 10)
+
+
+        # Total bonus eggs worker gets
+        worker_bonus_eggs = bonus_from_leftover + eggs_needed
+
+        # Deduct worker bonus eggs from eggs sold
+        eggs_for_sale = total_eggs - worker_bonus_eggs
+
+        # Calculate boxes and leftover sold to customer after bonus eggs removed
+        boxes_sold = eggs_for_sale // 12
+        leftover_sold = eggs_for_sale % 12
+
+        # Calculate amounts
+        boxes_income = boxes_sold * price_per_box
+        deposit_income = boxes_sold * deposit_per_box
+        leftover_income = leftover_sold * single_egg
+
+        total_customer_due = boxes_income + deposit_income + leftover_income
+
+        # Payment to worker based on hours only (no deduction for bonus eggs)
+        payment_to_worker = hours_worked * payment_hour
 
         lines = "-" * 45 + "\n"
 
-        # Display output
+        # Output
         self.output_area.insert(tk.END, f"Week {num_week} Statistics:\n")
         self.output_area.insert(tk.END, lines)
 
@@ -148,31 +189,28 @@ class ChickenFarm:
 
         # Eggs
         self.output_area.insert(tk.END, "Eggs:\n\n")
-        self.output_area.insert(tk.END, f"Laid Eggs: {egg_count} eggs\n")
-        self.output_area.insert(tk.END, f"Filled Boxes: {boxes_filled} ({eggs_in_box} eggs)\n")
-        self.output_area.insert(tk.END, f"Leftover Eggs: {eggs_left} eggs\n")
+        self.output_area.insert(tk.END, f"Total Eggs Laid: {total_eggs}\n")
+        self.output_area.insert(tk.END, f"Bonus Eggs Given to Worker: {worker_bonus_eggs}\n")
+        if boxes_removed > 0:
+            self.output_area.insert(tk.END, f"Boxes Removed for Bonus: {boxes_removed}\n")
+        self.output_area.insert(tk.END, f"Eggs Sold in Boxes: {boxes_sold * 12}\n")
+        self.output_area.insert(tk.END, f"Amount of Boxes Filled: {boxes_filled}\n")
+        self.output_area.insert(tk.END, f"Leftover Eggs Sold: {leftover_sold}\n")
         self.output_area.insert(tk.END, lines)
 
-        # Payment
-        self.output_area.insert(tk.END, "Payment:\n\n")
-        self.output_area.insert(tk.END, f"Hours Worked: {hours_worked} hours\n")
-        self.output_area.insert(tk.END, f"Payment Rate: €{payment_hour:.2f}/hour\n")
-
-        self.output_area.insert(tk.END, f"10 Free Eggs Bonus: -€{bonus_value:.2f}\n")
-        self.output_area.insert(tk.END, f"Final Payment: €{final_payment:.2f}\n")
+        # Payment to worker
+        self.output_area.insert(tk.END, "Worker Payment:\n\n")
+        self.output_area.insert(tk.END, f"Hours Worked: {hours_worked}\n")
+        self.output_area.insert(tk.END, f"Hourly Rate: €{payment_hour:.2f}\n")
+        self.output_area.insert(tk.END, f"Total Payment: €{payment_to_worker:.2f}\n")
         self.output_area.insert(tk.END, lines)
 
-        # Bonus Section
-        self.output_area.insert(tk.END, "Worker Bonus:\n\n")
-        self.output_area.insert(tk.END, f"Worker received 10 free eggs (worth €{bonus_value:.2f})\n")
-        self.output_area.insert(tk.END, lines)
-
-        # Receipt Section (Customer still pays full)
+        # Customer receipt
         self.output_area.insert(tk.END, "Customer Receipt:\n\n")
-        self.output_area.insert(tk.END, f"Boxes Purchased: {boxes_filled} x €{price_per_box:.2f} = €{boxes_filled * price_per_box:.2f}\n")
-        self.output_area.insert(tk.END, f"Box Deposits: {boxes_filled} x €{deposit_per_box:.2f} = €{boxes_filled * deposit_per_box:.2f}\n")
-        self.output_area.insert(tk.END, f"Leftover Eggs: {eggs_left} x €{single_egg:.2f} = €{eggs_left * single_egg:.2f}\n")
-        self.output_area.insert(tk.END, f"\nTotal Due: €{maximum_income:.2f}\n")
+        self.output_area.insert(tk.END, f"Boxes Purchased: {boxes_sold} x €{price_per_box:.2f} = €{boxes_income:.2f}\n")
+        self.output_area.insert(tk.END, f"Box Deposits: {boxes_sold} x €{deposit_per_box:.2f} = €{deposit_income:.2f}\n")
+        self.output_area.insert(tk.END, f"Leftover Eggs: {leftover_sold} x €{single_egg:.2f} = €{leftover_income:.2f}\n")
+        self.output_area.insert(tk.END, f"\nTotal Due: €{total_customer_due:.2f}\n")
         self.output_area.insert(tk.END, lines)
 
     def clear_output(self):
